@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.animation import FuncAnimation, writers
 
 matplotlib.use('TkAgg')  # for displaying in separate window
 plt.rcParams.update({
@@ -8,18 +9,7 @@ plt.rcParams.update({
     "font.family": "Computer Modern Roman"
 })
 
-# Taken from https://www.geeksforgeeks.org/program-find-gcd-floating-point-numbers/
-# Recursive function to return gcd
-# of a and b
-def gcd(a, b):
-    if (a < b):
-        return gcd(b, a)
-
-    # base case
-    if (abs(b) < 0.001):
-        return a
-    else:
-        return (gcd(b, a - np.floor(a / b) * b))
+dt = 1/30
 
 
 class Sensor:
@@ -68,7 +58,7 @@ for i in range(1, len(sensorLines)):
     sensorY = splitLine[1]
     pos = np.array([sensorX, sensorY]).astype(float)
 
-    sensorMeasurements = np.array(splitLine[2:]).astype(float)
+    sensorMeasurements = np.around(np.array(splitLine[2:]).astype(float), 15)
     if i == 1:
         timeLen = len(sensorMeasurements)
     else:
@@ -97,6 +87,28 @@ for ti in range(len(timesMatrix)):
         else:
             tPrev = timesMatrix[ti][tj]
 
+
+# Find Lap Times
+lapTimes = []
+for i in range(len(timesMatrix)):
+    lapTime = timesMatrix[i][0] - timesMatrix[i][-1]
+    lapTimes.append(lapTime)
+lapTimes = np.array(lapTimes)
+
+# Find Split Times
+flatTimes = timesMatrix.flatten()
+splitTimesMatrix = timesMatrix
+for ti in range(len(timesMatrix)):
+    for tj in range(len(timesMatrix[ti])):
+        if ti == 0 and tj == 0:
+            # Set error value
+            splitTimesMatrix[ti][tj] = np.NaN
+        else:
+            # Calculate time since pass prev sensor
+            splitTimesMatrix[ti][tj] -= flatTimes[ti + tj - 1]
+
+
+
 sensorPlotPoints = []
 for sensor in sensors:
     sensorPlotPoints.append(sensor.location)
@@ -104,7 +116,53 @@ sensorPlotPoints.append(sensors[0].location)
 
 sensorPlotPoints = np.array(sensorPlotPoints).transpose()
 
-plt.plot(sensorPlotPoints[0], sensorPlotPoints[1])
+fig = plt.figure()
+fig.set_size_inches(7, 7, True)
+ax = fig.add_subplot(1, 1, 1)
+ax.ticklabel_format(axis='both', style="sci")
+ax.set_aspect('equal')
+
+ax.set_xlabel(r"$x\ (\textnormal{cm})$")
+ax.set_ylabel(r"$y\ (\textnormal{cm})$")
+
+# timeText = ax.text(xmin + 1, ymax + 2, r"$t={0:.3f}".format(t[-1]) + r"\, \textnormal{s}$", fontsize=12)
+
+carPoint, = ax.plot(sensorPlotPoints[0][0], sensorPlotPoints[1][0], '.')
+
+
+
+def animate(i):
+    tmax = np.max(flatTimes)
+    t = i*dt
+
+    indexOfLastTime = np.where(flatTimes > t)[0][0]
+    indexOfLastSensor = indexOfLastTime % (len(timesMatrix)+1)
+    #print(indexOfLastSensor)
+
+    tLast = flatTimes[indexOfLastTime]
+    tNext = flatTimes[indexOfLastTime + 1]
+    xLast = sensorPlotPoints[0][indexOfLastSensor]
+    yLast = sensorPlotPoints[1][indexOfLastSensor]
+    xNext = sensorPlotPoints[0][indexOfLastSensor + 1]
+    yNext = sensorPlotPoints[1][indexOfLastSensor + 1]
+
+    x = ((xNext - xLast) / (tNext - tLast))*(t - tLast) + xNext
+    y = ((yNext - yLast) / (tNext - tLast)) * (t - tLast) + yNext
+
+    carPoint.set_data(x, y)
+
+
+ax.plot(sensorPlotPoints[0], sensorPlotPoints[1])
+# Create Animation, comment out to just plot regular plot of paths
+ts = np.arange(0, np.max(flatTimes), dt)
+anim = FuncAnimation(fig, animate, frames=ts.size, interval=dt)
+# Comment out if not saving
+# DPI = 1200 / 7
+# Writer = writers['ffmpeg']
+# Writer = Writer(fps=1/dt, bitrate=12000)
+# anim.save('Race Sim.mp4', writer=Writer, dpi=DPI)
+
+# Comment if saving as mp4
 plt.show()
 
 f.close()
