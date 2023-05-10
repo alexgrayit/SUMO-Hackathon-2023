@@ -20,7 +20,7 @@ class Sensor:
         self.times = times
         self.location = location
 
-inputFile = "input_p1.txt"
+inputFile = "real track_p1.txt"
 try: 
     f = open(inputFile, "r")
 
@@ -31,13 +31,15 @@ except FileNotFoundError:
 inputLines = []
 
 sensorsInFile = -1
-for line in f:
+for line in f.readlines():
     sensorsInFile += 1
     inputLines.append(line.strip())
 try:
     lapsStr, sensorsStr = inputLines[0].split(", ")
     laps = int(lapsStr)
     sensors = int(sensorsStr)
+
+    print(laps, sensors)
 except:
     print("There was an error in the first line, invalid format")
     exit(-1)
@@ -52,19 +54,17 @@ timesMatrix = []
 
 timeLen = 0
 
-for i in range(1, len(sensorLines)):
+for i in range(1, len(sensorLines) + 1):
     splitLine = inputLines[i].split(', ')
     sensorX = splitLine[0]
     sensorY = splitLine[1]
     pos = np.array([sensorX, sensorY]).astype(float)
 
     sensorMeasurements = np.around(np.array(splitLine[2:]).astype(float), 15)
-    if i == 1:
-        timeLen = len(sensorMeasurements)
-    else:
-        if len(sensorMeasurements) != timeLen:
-            print("Number of measurements from each sensor is different.")
-            exit(-1)
+
+    if len(sensorMeasurements) != laps:
+        print("Number of measurements do no match number of laps.")
+        exit(-1)
 
     sensor = Sensor(pos, sensorMeasurements)
     sensors.append(sensor)
@@ -87,7 +87,6 @@ for ti in range(len(timesMatrix)):
         else:
             tPrev = timesMatrix[ti][tj]
 
-
 # Find Lap Times
 lapTimes = []
 for i in range(len(timesMatrix)):
@@ -95,9 +94,10 @@ for i in range(len(timesMatrix)):
     lapTimes.append(lapTime)
 lapTimes = np.array(lapTimes)
 
+
 # Find Split Times
 flatTimes = timesMatrix.flatten()
-splitTimesMatrix = timesMatrix
+splitTimesMatrix = timesMatrix*0
 for ti in range(len(timesMatrix)):
     for tj in range(len(timesMatrix[ti])):
         if ti == 0 and tj == 0:
@@ -105,8 +105,16 @@ for ti in range(len(timesMatrix)):
             splitTimesMatrix[ti][tj] = np.NaN
         else:
             # Calculate time since pass prev sensor
-            splitTimesMatrix[ti][tj] -= flatTimes[ti + tj - 1]
+            splitTimesMatrix[ti][tj] = timesMatrix[ti][tj] - flatTimes[ti*len(timesMatrix[ti]) + tj - 1]
 
+
+totalTime = timesMatrix[0][0]
+for ti in range(len(timesMatrix)):
+    for tj in range(len(timesMatrix[ti])):
+        if ti + tj != 0:
+            totalTime += splitTimesMatrix[ti][tj]
+
+print(totalTime)
 
 
 sensorPlotPoints = []
@@ -122,8 +130,8 @@ ax = fig.add_subplot(1, 1, 1)
 ax.ticklabel_format(axis='both', style="sci")
 ax.set_aspect('equal')
 
-ax.set_xlabel(r"$x\ (\textnormal{cm})$")
-ax.set_ylabel(r"$y\ (\textnormal{cm})$")
+ax.set_xlabel(r"$x\ (\textnormal{m})$")
+ax.set_ylabel(r"$y\ (\textnormal{m})$")
 
 # timeText = ax.text(xmin + 1, ymax + 2, r"$t={0:.3f}".format(t[-1]) + r"\, \textnormal{s}$", fontsize=12)
 
@@ -135,8 +143,8 @@ def animate(i):
     tmax = np.max(flatTimes)
     t = i*dt
 
-    indexOfLastTime = np.where(flatTimes > t)[0][0]
-    indexOfLastSensor = indexOfLastTime % (len(timesMatrix)+1)
+    indexOfLastTime = np.where(flatTimes > t)[0][0] - 1
+    indexOfLastSensor = indexOfLastTime % (len(timesMatrix[0]))
     #print(indexOfLastSensor)
 
     tLast = flatTimes[indexOfLastTime]
@@ -146,8 +154,8 @@ def animate(i):
     xNext = sensorPlotPoints[0][indexOfLastSensor + 1]
     yNext = sensorPlotPoints[1][indexOfLastSensor + 1]
 
-    x = ((xNext - xLast) / (tNext - tLast))*(t - tLast) + xNext
-    y = ((yNext - yLast) / (tNext - tLast)) * (t - tLast) + yNext
+    x = ((xNext - xLast) / (tNext - tLast))*(t - tLast) + xLast
+    y = ((yNext - yLast) / (tNext - tLast)) * (t - tLast) + yLast
 
     carPoint.set_data(x, y)
 
