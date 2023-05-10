@@ -135,7 +135,7 @@ ax.set_ylabel(r"$y\ (\textnormal{m})$")
 
 # timeText = ax.text(xmin + 1, ymax + 2, r"$t={0:.3f}".format(t[-1]) + r"\, \textnormal{s}$", fontsize=12)
 
-carPoint, = ax.plot(sensorPlotPoints[0][0], sensorPlotPoints[1][0], '.')
+carPoint, = ax.plot(sensorPlotPoints[0][0], sensorPlotPoints[1][0], marker='.', markersize=15)
 
 
 
