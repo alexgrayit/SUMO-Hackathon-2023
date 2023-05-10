@@ -158,6 +158,18 @@ class Queen:
         movementOptions = nonCollisionMoves(board, self)
         return movementOptions
 
+    def getMovableAndLegalSquares(self, board):
+        movableSquares = self.getMovableSquares(board)
+        for y in range(rows):
+            for x in range(cols):
+                if movableSquares[y][x] == 1:
+                    pos = [x, y]
+                    isLegal = checkMoveIsLegal(board, self, pos)
+
+                    if not isLegal:
+                        movableSquares[y][x] = 0
+        return movableSquares
+
 class Bishop:
     isWhite = True
     position = [0, 0]
@@ -182,6 +194,18 @@ class Bishop:
     def getMovableSquares(self, board):
         movementOptions = nonCollisionMoves(board, self)
         return movementOptions
+
+    def getMovableAndLegalSquares(self, board):
+        movableSquares = self.getMovableSquares(board)
+        for y in range(rows):
+            for x in range(cols):
+                if movableSquares[y][x] == 1:
+                    pos = [x, y]
+                    isLegal = checkMoveIsLegal(board, self, pos)
+
+                    if not isLegal:
+                        movableSquares[y][x] = 0
+        return movableSquares
 
 
 class Knight:
@@ -209,6 +233,18 @@ class Knight:
         movementOptions = nonCollisionMoves(board, self)
         return movementOptions
 
+    def getMovableAndLegalSquares(self, board):
+        movableSquares = self.getMovableSquares(board)
+        for y in range(rows):
+            for x in range(cols):
+                if movableSquares[y][x] == 1:
+                    pos = [x, y]
+                    isLegal = checkMoveIsLegal(board, self, pos)
+
+                    if not isLegal:
+                        movableSquares[y][x] = 0
+        return movableSquares
+
 
 class Rook:
     isWhite = True
@@ -234,6 +270,18 @@ class Rook:
     def getMovableSquares(self, board):
         movementOptions = nonCollisionMoves(board, self)
         return movementOptions
+
+    def getMovableAndLegalSquares(self, board):
+        movableSquares = self.getMovableSquares(board)
+        for y in range(rows):
+            for x in range(cols):
+                if movableSquares[y][x] == 1:
+                    pos = [x, y]
+                    isLegal = checkMoveIsLegal(board, self, pos)
+
+                    if not isLegal:
+                        movableSquares[y][x] = 0
+        return movableSquares
 
 class Pawn:
     isWhite = True
@@ -262,11 +310,23 @@ class Pawn:
                 elif np.abs(xRel) == 0 and yRel == dir:
                     testBoard[y][x] = 1
         return testBoard
-#thanks for all your help <3 penis
+    # thanks for all your help <3 penis
 
     def getMovableSquares(self, board):
         movementOptions = nonCollisionMoves(board, self)
         return movementOptions
+
+    def getMovableAndLegalSquares(self, board):
+        movableSquares = self.getMovableSquares(board)
+        for y in range(rows):
+            for x in range(cols):
+                if movableSquares[y][x] == 1:
+                    pos = [x, y]
+                    isLegal = checkMoveIsLegal(board, self, pos)
+
+                    if not isLegal:
+                        movableSquares[y][x] = 0
+        return movableSquares
 
 
 
