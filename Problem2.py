@@ -31,11 +31,11 @@ def nonCollisionMoves(board, piece):
     for y in range(rows):
         for x in range(cols):
             if movementOptions[y][x] == 1:
-                if board[y][x] != None:
+                if not board[y][x] is None:
                     if board[y][x].isWhite == piece.isWhite:
                         movementOptions[y][x] = 0
             elif movementOptions[y][x] == 2:
-                if board[y][x] == None:
+                if board[y][x] is None:
                     movementOptions[y][x] = 0
                 elif board[y][x].isWhite == piece.isWhite:
                     movementOptions[y][x] = 0
@@ -50,29 +50,32 @@ def nonCollisionMoves(board, piece):
 
 
 def checkThatPieceCausesCheck(board, piece):
-    availableMoves = piece.getMovableSquares()
+    availableMoves = piece.getMovableSquares(board)
     for y in range(rows):
         for x in range(cols):
             if availableMoves[y][x] == 1:
-                if board[y][x].type == 'k' and board[y][x].isWhite != piece.isWhite:
-                    return True
+                if not board[y][x] is None:
+                    if board[y][x].type == 'k' and board[y][x].isWhite != piece.isWhite:
+                        return True
     return False
 
 
 def checkForBlackCausedCheck(board):
     for y in range(rows):
         for x in range(cols):
-            if not board[y][x].isWhite:
-                if checkThatPieceCausesCheck(board, board[y][x]):
-                    return True
+            if not board[y][x] is None:
+                if not board[y][x].isWhite:
+                    if checkThatPieceCausesCheck(board, board[y][x]):
+                        return True
     return False
 
 def checkForWhiteCausedCheck(board):
     for y in range(rows):
         for x in range(cols):
-            if board[y][x].isWhite:
-                if checkThatPieceCausesCheck(board, board[y][x]):
-                    return True
+            if not board[y][x] is None:
+                if board[y][x].isWhite:
+                    if checkThatPieceCausesCheck(board, board[y][x]):
+                        return True
     return False
 
 def movePiece(board, piece, position):
@@ -95,6 +98,36 @@ def checkMoveIsLegal(board, piece, movePos):
     legal = not causedCheck
     return legal
 
+def moveAchievesCheck(board, piece, movePos):
+    newBoard = copy.copy(board)
+    newBoard, piece = movePiece(newBoard, piece, movePos)
+    if piece.isWhite:
+        causedCheck = checkForWhiteCausedCheck(newBoard)
+    else:
+        causedCheck = checkForBlackCausedCheck(newBoard)
+
+    return causedCheck
+
+def checkIfPieceCanAchieveCheck(board, piece):
+    possibleMoves = piece.getMovableAndLegalSquares(board)
+    canCheck = False
+    for y in range(rows):
+        for x in range(cols):
+            if possibleMoves[y][x] == 1:
+                move = [x, y]
+                if moveAchievesCheck(copy.copy(board), copy.copy(piece), move):
+                    canCheck = True
+    return canCheck
+
+def checkIfWhiteCanCheck(board):
+    for y in range(rows):
+        for x in range(cols):
+            if not board[y][x] is None:
+                if board[y][x].isWhite:
+                    pieceCanCheck = checkIfPieceCanAchieveCheck(board, board[y][x])
+                    if pieceCanCheck:
+                        print("The piece at position ({X}, {Y}) of type {type} can check.".format(X=x, Y=y, type=board[y][x].type))
+
 class King:
     isWhite = True
     position = [0, 0]
@@ -106,7 +139,7 @@ class King:
 
     # Returns a vector of all of the move options based on current position
     def movementOptions(self):
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -329,12 +362,36 @@ class Pawn:
         return movableSquares
 
 
+def createPiece(x, y, typeChar):
+    isWhite = typeChar == typeChar.lower()
+    pos = [x, y]
 
+    lowerChar = typeChar.lower()
+    if lowerChar == 'k':
+        return King(isWhite, pos)
+    elif lowerChar == 'q':
+        return Queen(isWhite, pos)
+    elif lowerChar == 'b':
+        return Bishop(isWhite, pos)
+    elif lowerChar == 'n':
+        return Knight(isWhite, pos)
+    elif lowerChar == 'r':
+        return Rook(isWhite, pos)
+    elif lowerChar == 'p':
+        return Pawn(isWhite, pos)
+    else:
+        print("Error creating piece with char {}.".format(lowerChar))
+        exit(-1)
 
+def initialiseBoard():
+    emptyRow = [None]*cols
+    board = [emptyRow]*rows
+    return board
 
 inputFile = "board1.txt"
 rows = 5
 cols = 5
+legalChars = ['K', 'k', 'Q', 'q', 'B', 'b', 'N', 'n', 'R', 'r', 'P', 'p']
 
 f = open(inputFile, 'r')
 fLines = f.readlines()
@@ -346,12 +403,25 @@ lines = []
 for line in fLines:
     lineStripped = line.strip('\n')
     if len(lineStripped) != cols:
-        print("A line had the incorect number of squares.")
+        print("A line had the incorrect number of squares.")
         exit(-1)
 
     lines.append(lineStripped)
 
 
+board = initialiseBoard()
+for y in range(rows):
+    for x in range(cols):
+        pieceChar = lines[y][x]
+        piece = None
+        if pieceChar != '0':
+            if not (pieceChar in legalChars):
+                print("Illegal character encountered {}.".format(pieceChar))
+                exit(-1)
+            else:
+                piece = createPiece(x, y, pieceChar)
+
+        board[y][x] = piece
 
 
-
+checkIfWhiteCanCheck(board)
