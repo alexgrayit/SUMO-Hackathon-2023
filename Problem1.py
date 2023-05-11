@@ -37,14 +37,14 @@ for line in f.readlines():
 try:
     lapsStr, sensorsStr = inputLines[0].split(", ")
     laps = int(lapsStr)
-    sensors = int(sensorsStr)
+    sensorCount = int(sensorsStr)
 
-    print(laps, sensors)
+    print(laps, sensorCount)
 except:
     print("There was an error in the first line, invalid format")
     exit(-1)
 
-if sensors != sensorsInFile:
+if sensorCount != sensorsInFile:
     print("Not enough sensors provided")
 
 # Collect sensor objects and times into arrays
@@ -117,6 +117,43 @@ for ti in range(len(timesMatrix)):
 print(totalTime)
 
 
+distances = []
+for si in range(sensorCount):
+    if si == sensorCount - 1:
+        nextSensorPos = sensors[0].location
+        prevSensorPos = sensors[si].location
+    else:
+        nextSensorPos = sensors[si+1].location
+        prevSensorPos = sensors[si].location
+
+    distance = np.sqrt((nextSensorPos[0] - prevSensorPos[0])**2 + (nextSensorPos[1] - prevSensorPos[1])**2)
+    distances.append(distance)
+
+distances = np.array(distances).astype(float)
+
+fastestTimes = np.zeros(sensorCount)
+for lap in range(laps):
+    for si in range(sensorCount):
+        time = splitTimesMatrix[lap][si]
+        di = si - 1
+        if not (lap == 0 and si == 0):
+            if fastestTimes[di] == 0:
+                fastestTimes[di] = time
+            else:
+                if time < fastestTimes[di]:
+                    fastestTimes[di] = time
+
+fastestSpeeds = np.divide(distances, fastestTimes)
+
+lapTimes = np.zeros(laps)
+for lap in range(laps):
+    if lap == laps - 1:
+        lapTimes[lap] = timesMatrix[lap][-1] - timesMatrix[lap][0]
+    else:
+        lapTimes[lap] = timesMatrix[lap+1][0] - timesMatrix[lap][0]
+
+
+
 sensorPlotPoints = []
 for sensor in sensors:
     sensorPlotPoints.append(sensor.location)
@@ -159,6 +196,14 @@ def animate(i):
 
     carPoint.set_data(x, y)
 
+
+fLog = open("log.txt", "w")
+
+fLog.write("FastestLap: " + str(np.where(lapTimes == min(lapTimes))[0][0] + 1) + '\n')
+fLog.write("FastestSpeed: " + str(max(fastestSpeeds))+ '\n')
+for n in range(sensorCount):
+    fLog.write("FastestSplit{} ".format(n+1) + str(fastestTimes[n]) + '\n')
+fLog.close()
 
 ax.plot(sensorPlotPoints[0], sensorPlotPoints[1])
 # Create Animation, comment out to just plot regular plot of paths

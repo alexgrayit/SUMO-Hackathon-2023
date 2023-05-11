@@ -88,7 +88,7 @@ def movePiece(board, piece, position):
 
 
 def checkMoveIsLegal(board, piece, movePos):
-    newBoard = copy.copy(board)
+    newBoard = copy.deepcopy(board)
     newBoard, piece = movePiece(newBoard, piece, movePos)
     if piece.isWhite:
         causedCheck = checkForBlackCausedCheck(newBoard)
@@ -99,7 +99,7 @@ def checkMoveIsLegal(board, piece, movePos):
     return legal
 
 def moveAchievesCheck(board, piece, movePos):
-    newBoard = copy.copy(board)
+    newBoard = copy.deepcopy(board)
     newBoard, piece = movePiece(newBoard, piece, movePos)
     if piece.isWhite:
         causedCheck = checkForWhiteCausedCheck(newBoard)
@@ -109,13 +109,13 @@ def moveAchievesCheck(board, piece, movePos):
     return causedCheck
 
 def checkIfPieceCanAchieveCheck(board, piece):
-    possibleMoves = piece.getMovableAndLegalSquares(board)
+    possibleMoves = piece.getMovableAndLegalSquares(copy.deepcopy(board))
     canCheck = False
     for y in range(rows):
         for x in range(cols):
             if possibleMoves[y][x] == 1:
                 move = [x, y]
-                if moveAchievesCheck(copy.copy(board), copy.copy(piece), move):
+                if moveAchievesCheck(copy.deepcopy(board), copy.deepcopy(piece), move):
                     canCheck = True
     return canCheck
 
@@ -124,9 +124,15 @@ def checkIfWhiteCanCheck(board):
         for x in range(cols):
             if not board[y][x] is None:
                 if board[y][x].isWhite:
-                    pieceCanCheck = checkIfPieceCanAchieveCheck(board, board[y][x])
+                    piece = board[y][x]
+                    boardCopy = copy.deepcopy(board)
+                    pieceCanCheck = checkIfPieceCanAchieveCheck(boardCopy, copy.deepcopy(piece))
                     if pieceCanCheck:
-                        print("The piece at position ({X}, {Y}) of type {type} can check.".format(X=x, Y=y, type=board[y][x].type))
+                        print(board[y][x])
+                        print("The piece at position ({X}, {Y}) of type {type} can check.".format(X=x, Y=y, type=piece.type))
+                        return True
+
+    return False
 
 class King:
     isWhite = True
@@ -177,7 +183,7 @@ class Queen:
 
     # Returns a vector of all of the move options based on current position
     def movementOptions(self):
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -214,7 +220,7 @@ class Bishop:
 
     # Returns a vector of all of the move options based on current position
     def movementOptions(self):
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -229,7 +235,8 @@ class Bishop:
         return movementOptions
 
     def getMovableAndLegalSquares(self, board):
-        movableSquares = self.getMovableSquares(board)
+        newBoard = board[:]
+        movableSquares = self.getMovableSquares(newBoard)
         for y in range(rows):
             for x in range(cols):
                 if movableSquares[y][x] == 1:
@@ -252,7 +259,7 @@ class Knight:
 
     # Returns a vector of all of the move options based on current position
     def movementOptions(self):
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -290,7 +297,7 @@ class Rook:
 
     # Returns a vector of all of the move options based on current position
     def movementOptions(self):
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -332,7 +339,7 @@ class Pawn:
         else:
             dir = -1
 
-        testBoard = np.zeros(rows, cols)
+        testBoard = np.zeros((rows, cols))
         for y in range(rows):
             for x in range(cols):
                 xRel = x - self.position[0]
@@ -384,11 +391,15 @@ def createPiece(x, y, typeChar):
         exit(-1)
 
 def initialiseBoard():
-    emptyRow = [None]*cols
-    board = [emptyRow]*rows
+    board = []
+    for y in range(rows):
+        row = []
+        for x in range(cols):
+            row.append(None)
+        board.append(row)
     return board
 
-inputFile = "board1.txt"
+inputFile = "board4.txt"
 rows = 5
 cols = 5
 legalChars = ['K', 'k', 'Q', 'q', 'B', 'b', 'N', 'n', 'R', 'r', 'P', 'p']
@@ -420,8 +431,8 @@ for y in range(rows):
                 exit(-1)
             else:
                 piece = createPiece(x, y, pieceChar)
+                #print("Created", pieceChar, piece, "at", x, y)
+                board[y][x] = piece
 
-        board[y][x] = piece
-
-
+#print(checkForWhiteCausedCheck(board))
 checkIfWhiteCanCheck(board)
