@@ -210,13 +210,13 @@ ax.plot(sensorPlotPoints[0], sensorPlotPoints[1])
 ts = np.arange(0, np.max(flatTimes), dt)
 anim = FuncAnimation(fig, animate, frames=ts.size, interval=dt)
 # Comment out if not saving
-# DPI = 1200 / 7
-# Writer = writers['ffmpeg']
-# Writer = Writer(fps=1/dt, bitrate=12000)
-# anim.save('Race Sim.mp4', writer=Writer, dpi=DPI)
+DPI = 1200 / 7
+Writer = writers['ffmpeg']
+Writer = Writer(fps=1/dt, bitrate=12000)
+anim.save('Race Sim.mp4', writer=Writer, dpi=DPI)
 
 # Comment if saving as mp4
-plt.show()
+#plt.show()
 
 f.close()
 # f = open(input_file, "r")
